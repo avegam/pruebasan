@@ -13,40 +13,71 @@ def convertir_a_diccionario(lista_anidada):
             dic[clave] = valores
     return dic
 
-def analizar_fila_vs_base(df, fila_base_idx, fila_objetivo_idx, columna="Datos"):
+def analizar_vs_base(base_lista, objetivo_lista):
+    dict_base = convertir_a_diccionario(base_lista)
+    dict_objetivo = convertir_a_diccionario(objetivo_lista)
+
+    claves_base = set(dict_base.keys())
+    claves_comparado = set(dict_objetivo.keys())
+
+    claves_sobrantes = claves_comparado - claves_base
+    claves_faltantes = claves_base - claves_comparado
+
+    detalles_sobrantes = {clave: dict_objetivo[clave] for clave in claves_sobrantes}
+    detalles_faltantes = {clave: dict_base[clave] for clave in claves_faltantes}
+
+    cantidad_sobrantes = sum(len(v) for v in detalles_sobrantes.values())
+    cantidad_faltantes = sum(len(v) for v in detalles_faltantes.values())
+
+    return {
+        "Claves_Valor_DeMas": str(detalles_sobrantes),
+        "Cantidad_Valor_DeMas": cantidad_sobrantes,
+        "Claves_Valor_Faltantes": str(detalles_faltantes),
+        "Cantidad_Valor_Faltantes": cantidad_faltantes
+    }
+
+# ---------------------------
+# CONFIGURACIÓN
+# ---------------------------
+archivo = "datos.xlsx"               # nombre del archivo de entrada
+columna_datos = "Datos"             # nombre de la columna que contiene los datos
+fila_base_idx = 0                   # número de fila que se usará como base (0 = primera)
+archivo_salida = "resultado_analisis.xlsx"
+
+# ---------------------------
+# PROCESAMIENTO
+# ---------------------------
+
+df = pd.read_excel(archivo)
+
+# Convertir la fila base en lista
+base_raw = df.loc[fila_base_idx, columna_datos]
+base_lista = ast.literal_eval(base_raw) if isinstance(base_raw, str) else []
+
+# Inicializamos columnas vacías
+df["Claves_Valor_DeMas"] = ""
+df["Cantidad_Valor_DeMas"] = ""
+df["Claves_Valor_Faltantes"] = ""
+df["Cantidad_Valor_Faltantes"] = ""
+
+# Procesamos fila por fila
+for i in df.index:
+    objetivo_raw = df.at[i, columna_datos]
     try:
-        base_raw = df.loc[fila_base_idx, columna]
-        objetivo_raw = df.loc[fila_objetivo_idx, columna]
-
-        base_lista = ast.literal_eval(base_raw)
-        objetivo_lista = ast.literal_eval(objetivo_raw)
-
-        dict_base = convertir_a_diccionario(base_lista)
-        dict_objetivo = convertir_a_diccionario(objetivo_lista)
-
-        claves_base = set(dict_base.keys())
-        claves_comparado = set(dict_objetivo.keys())
-
-        claves_sobrantes = claves_comparado - claves_base
-        claves_faltantes = claves_base - claves_comparado
-
-        detalles_sobrantes = {clave: dict_objetivo[clave] for clave in claves_sobrantes}
-        detalles_faltantes = {clave: dict_base[clave] for clave in claves_faltantes}
-
-        cantidad_sobrantes = sum(len(v) for v in detalles_sobrantes.values())
-        cantidad_faltantes = sum(len(v) for v in detalles_faltantes.values())
-
-        return {
-            "Claves_Valor_DeMas": str(detalles_sobrantes),
-            "Cantidad_Valor_DeMas": cantidad_sobrantes,
-            "Claves_Valor_Faltantes": str(detalles_faltantes),
-            "Cantidad_Valor_Faltantes": cantidad_faltantes
-        }
-
+        objetivo_lista = ast.literal_eval(objetivo_raw) if isinstance(objetivo_raw, str) else []
+        resultado = analizar_vs_base(base_lista, objetivo_lista)
     except Exception as e:
-        return {
+        resultado = {
             "Claves_Valor_DeMas": f"Error: {e}",
             "Cantidad_Valor_DeMas": "",
             "Claves_Valor_Faltantes": "",
             "Cantidad_Valor_Faltantes": ""
         }
+
+    # Escribimos los resultados en las columnas correspondientes de esa misma fila
+    for clave in resultado:
+        df.at[i, clave] = resultado[clave]
+
+# Guardamos en un nuevo archivo Excel
+df.to_excel(archivo_salida, index=False)
+print(f"Análisis completo. Archivo guardado como '{archivo_salida}'.")
