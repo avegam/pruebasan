@@ -1,0 +1,90 @@
+import pandas as pd
+import ast
+from collections import Counter
+
+def parsear_lista(texto):
+    """Convierte un string a lista Python de listas tipo [clave, val1, val2]"""
+    if isinstance(texto, str) and texto.strip().startswith("["):
+        try:
+            lista = ast.literal_eval(texto)
+            if isinstance(lista, list):
+                return lista
+        except:
+            return []
+    return []
+
+def lista_a_diccionario(lista_de_listas):
+    """Convierte [['archivo.pdf', 1, 2], ...] a {'archivo.pdf': [1, 2]}"""
+    diccionario = {}
+    for item in lista_de_listas:
+        if isinstance(item, list) and len(item) >= 2:
+            clave = item[0]
+            valores = item[1:]
+            if clave in diccionario:
+                diccionario[clave].extend(valores)
+            else:
+                diccionario[clave] = valores
+    return diccionario
+
+def comparar_diccionarios_con_valores_repetidos(dic1, dic2):
+    """Compara dos diccionarios con claves y valores múltiples"""
+    claves_valores_demas = {}
+    claves_valores_faltantes = {}
+    
+    claves_todas = set(dic1.keys()).union(dic2.keys())
+
+    for clave in claves_todas:
+        valores1 = dic1.get(clave, [])
+        valores2 = dic2.get(clave, [])
+
+        c1 = Counter(valores1)
+        c2 = Counter(valores2)
+
+        diferencia_demas = c1 - c2
+        diferencia_faltantes = c2 - c1
+
+        if diferencia_demas:
+            claves_valores_demas[clave] = list(diferencia_demas.elements())
+        if diferencia_faltantes:
+            claves_valores_faltantes[clave] = list(diferencia_faltantes.elements())
+
+    return {
+        "Claves_Valor_DeMas": claves_valores_demas,
+        "Cantidad_Valor_DeMas": sum(len(v) for v in claves_valores_demas.values()),
+        "Claves_Valor_Faltantes": claves_valores_faltantes,
+        "Cantidad_Valor_Faltantes": sum(len(v) for v in claves_valores_faltantes.values())
+    }
+
+# --- Configuración del archivo
+ruta_excel = "datos.xlsx"
+nombre_hoja = "Hoja1"  # Cambiá si usás otro nombre
+
+# --- Leer Excel
+df = pd.read_excel(ruta_excel, sheet_name=nombre_hoja)
+
+# --- Procesar fila por fila
+for i, row in df.iterrows():
+    try:
+        lista_datos = parsear_lista(row["Datos"])
+        lista_base = parsear_lista(row["Base"])
+
+        dic_datos = lista_a_diccionario(lista_datos)
+        dic_base = lista_a_diccionario(lista_base)
+
+        resultado = comparar_diccionarios_con_valores_repetidos(dic_datos, dic_base)
+
+        df.at[i, "Claves_Valor_DeMas"] = str(resultado["Claves_Valor_DeMas"])
+        df.at[i, "Cantidad_Valor_DeMas"] = resultado["Cantidad_Valor_DeMas"]
+        df.at[i, "Claves_Valor_Faltantes"] = str(resultado["Claves_Valor_Faltantes"])
+        df.at[i, "Cantidad_Valor_Faltantes"] = resultado["Cantidad_Valor_Faltantes"]
+        df.at[i, "Error"] = ""
+
+    except Exception as e:
+        df.at[i, "Claves_Valor_DeMas"] = ""
+        df.at[i, "Cantidad_Valor_DeMas"] = ""
+        df.at[i, "Claves_Valor_Faltantes"] = ""
+        df.at[i, "Cantidad_Valor_Faltantes"] = ""
+        df.at[i, "Error"] = str(e)
+
+# --- Guardar Excel con resultados
+df.to_excel("resultado_comparacion.xlsx", index=False)
