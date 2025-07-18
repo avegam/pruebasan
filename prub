@@ -1,53 +1,52 @@
 import pandas as pd
 import ast
 
-def analizar_diferencias(dict_base, dict_comparado):
-    claves_base = set(dict_base.keys())
-    claves_comparado = set(dict_comparado.keys())
+def convertir_a_diccionario(lista_anidada):
+    """
+    Convierte [["clave", val1, val2], ...] en {"clave": [val1, val2]}
+    """
+    dic = {}
+    for item in lista_anidada:
+        if isinstance(item, list) and len(item) >= 2:
+            clave = item[0]
+            valores = item[1:]
+            dic[clave] = valores
+    return dic
 
-    claves_sobrantes = claves_comparado - claves_base
-    claves_faltantes = claves_base - claves_comparado
+def analizar_fila_vs_base(df, fila_base_idx, fila_objetivo_idx, columna="Datos"):
+    try:
+        base_raw = df.loc[fila_base_idx, columna]
+        objetivo_raw = df.loc[fila_objetivo_idx, columna]
 
-    detalles_sobrantes = {}
-    detalles_faltantes = {}
+        base_lista = ast.literal_eval(base_raw)
+        objetivo_lista = ast.literal_eval(objetivo_raw)
 
-    # Valores de más
-    for clave in claves_sobrantes:
-        detalles_sobrantes[clave] = dict_comparado.get(clave, [])
+        dict_base = convertir_a_diccionario(base_lista)
+        dict_objetivo = convertir_a_diccionario(objetivo_lista)
 
-    # Valores que faltan
-    for clave in claves_faltantes:
-        detalles_faltantes[clave] = dict_base.get(clave, [])
+        claves_base = set(dict_base.keys())
+        claves_comparado = set(dict_objetivo.keys())
 
-    # Cantidades
-    cantidad_sobrantes = sum(len(v) for v in detalles_sobrantes.values())
-    cantidad_faltantes = sum(len(v) for v in detalles_faltantes.values())
+        claves_sobrantes = claves_comparado - claves_base
+        claves_faltantes = claves_base - claves_comparado
 
-    return {
-        "Claves_Valor_DeMas": str(detalles_sobrantes),
-        "Cantidad_Valor_DeMas": cantidad_sobrantes,
-        "Claves_Valor_Faltantes": str(detalles_faltantes),
-        "Cantidad_Valor_Faltantes": cantidad_faltantes
-    }
+        detalles_sobrantes = {clave: dict_objetivo[clave] for clave in claves_sobrantes}
+        detalles_faltantes = {clave: dict_base[clave] for clave in claves_faltantes}
 
-# Leer el Excel
-archivo = "datos.xlsx"  # Cambiá esto al nombre de tu archivo
-df = pd.read_excel(archivo)
+        cantidad_sobrantes = sum(len(v) for v in detalles_sobrantes.values())
+        cantidad_faltantes = sum(len(v) for v in detalles_faltantes.values())
 
-# Convertimos los strings de la columna "Datos" a diccionarios
-df["Datos_dic"] = df["Datos"].apply(lambda x: ast.literal_eval(x) if isinstance(x, str) else {})
+        return {
+            "Claves_Valor_DeMas": str(detalles_sobrantes),
+            "Cantidad_Valor_DeMas": cantidad_sobrantes,
+            "Claves_Valor_Faltantes": str(detalles_faltantes),
+            "Cantidad_Valor_Faltantes": cantidad_faltantes
+        }
 
-# Usamos el primer diccionario como base
-dict_base = df["Datos_dic"].iloc[0]
-
-# Procesamos fila por fila
-resultados = df["Datos_dic"].apply(lambda dic: analizar_diferencias(dict_base, dic))
-
-# Convertimos los resultados a columnas separadas
-resultados_df = pd.DataFrame(resultados.tolist())
-
-# Unimos los resultados al dataframe original
-df = pd.concat([df, resultados_df], axis=1)
-
-# Guardamos el resultado
-df.to_excel("resultado_analisis.xlsx", index=False)
+    except Exception as e:
+        return {
+            "Claves_Valor_DeMas": f"Error: {e}",
+            "Cantidad_Valor_DeMas": "",
+            "Claves_Valor_Faltantes": "",
+            "Cantidad_Valor_Faltantes": ""
+        }
