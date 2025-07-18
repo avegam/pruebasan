@@ -39,9 +39,9 @@ def analizar_vs_base(base_lista, objetivo_lista):
 # ---------------------------
 # CONFIGURACIÓN
 # ---------------------------
-archivo = "datos.xlsx"               # nombre del archivo de entrada
-columna_datos = "Datos"             # nombre de la columna que contiene los datos
-fila_base_idx = 0                   # número de fila que se usará como base (0 = primera)
+archivo = "datos.xlsx"               # Nombre de tu archivo de entrada
+columna_datos = "Datos"             # Columna con los datos a evaluar
+columna_base = "Base"               # Columna con el diccionario base por fila
 archivo_salida = "resultado_analisis.xlsx"
 
 # ---------------------------
@@ -49,10 +49,6 @@ archivo_salida = "resultado_analisis.xlsx"
 # ---------------------------
 
 df = pd.read_excel(archivo)
-
-# Convertir la fila base en lista
-base_raw = df.loc[fila_base_idx, columna_datos]
-base_lista = ast.literal_eval(base_raw) if isinstance(base_raw, str) else []
 
 # Inicializamos columnas vacías
 df["Claves_Valor_DeMas"] = ""
@@ -62,10 +58,15 @@ df["Cantidad_Valor_Faltantes"] = ""
 
 # Procesamos fila por fila
 for i in df.index:
-    objetivo_raw = df.at[i, columna_datos]
+    raw_dato = df.at[i, columna_datos]
+    raw_base = df.at[i, columna_base]
+
     try:
-        objetivo_lista = ast.literal_eval(objetivo_raw) if isinstance(objetivo_raw, str) else []
-        resultado = analizar_vs_base(base_lista, objetivo_lista)
+        dato_lista = ast.literal_eval(raw_dato) if isinstance(raw_dato, str) else []
+        base_lista = ast.literal_eval(raw_base) if isinstance(raw_base, str) else []
+
+        resultado = analizar_vs_base(base_lista, dato_lista)
+
     except Exception as e:
         resultado = {
             "Claves_Valor_DeMas": f"Error: {e}",
@@ -74,10 +75,10 @@ for i in df.index:
             "Cantidad_Valor_Faltantes": ""
         }
 
-    # Escribimos los resultados en las columnas correspondientes de esa misma fila
-    for clave in resultado:
-        df.at[i, clave] = resultado[clave]
+    # Escribimos en la misma fila
+    for clave, valor in resultado.items():
+        df.at[i, clave] = valor
 
 # Guardamos en un nuevo archivo Excel
 df.to_excel(archivo_salida, index=False)
-print(f"Análisis completo. Archivo guardado como '{archivo_salida}'.")
+print(f"✅ Archivo guardado como '{archivo_salida}'")
