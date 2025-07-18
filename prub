@@ -1,3 +1,15 @@
+def parsear_lista(texto):
+    if not isinstance(texto, str) or not texto.strip().startswith("["):
+        return []
+    try:
+        return ast.literal_eval(texto)
+    except:
+        return []
+
+dato_lista = parsear_lista(raw_dato)
+base_lista = parsear_lista(raw_base)
+
+
 import pandas as pd
 import ast
 
