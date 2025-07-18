@@ -1,3 +1,29 @@
+for i, row in df.iterrows():
+    try:
+        lista_datos = parsear_lista(row["Datos"])
+        lista_base = parsear_lista(row["Base"])
+
+        dic_datos = lista_a_diccionario(lista_datos)
+        dic_base = lista_a_diccionario(lista_base)
+
+        # Validación explícita
+        if not isinstance(dic_datos, dict) or not isinstance(dic_base, dict):
+            raise ValueError("La conversión a diccionario falló")
+
+        resultado = comparar_diccionarios_con_valores_repetidos(dic_datos, dic_base)
+
+        df.at[i, "Claves_Valor_DeMas"] = str(resultado["Claves_Valor_DeMas"])
+        df.at[i, "Cantidad_Valor_DeMas"] = resultado["Cantidad_Valor_DeMas"]
+        df.at[i, "Claves_Valor_Faltantes"] = str(resultado["Claves_Valor_Faltantes"])
+        df.at[i, "Cantidad_Valor_Faltantes"] = resultado["Cantidad_Valor_Faltantes"]
+        df.at[i, "Error"] = ""
+
+    except Exception as e:
+        df.at[i, "Claves_Valor_DeMas"] = ""
+        df.at[i, "Cantidad_Valor_DeMas"] = ""
+        df.at[i, "Claves_Valor_Faltantes"] = ""
+        df.at[i, "Cantidad_Valor_Faltantes"] = ""
+        df.at[i, "Error"] = str(e)
 
 from collections import Counter
 
