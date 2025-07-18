@@ -1,3 +1,80 @@
+
+from collections import Counter
+
+def comparar_diccionarios_con_valores_repetidos(dic1, dic2):
+    claves_valores_demas = {}
+    claves_valores_faltantes = {}
+    
+    claves_todas = set(dic1.keys()).union(dic2.keys())
+
+    for clave in claves_todas:
+        valores1 = dic1.get(clave, [])
+        valores2 = dic2.get(clave, [])
+
+        c1 = Counter(valores1)
+
+        c2 = Counter(valores2)
+
+        diferencia_demas = c1 - c2  # valores que sobran en dic1
+        diferencia_faltantes = c2 - c1  # valores que faltan en dic1
+
+        if diferencia_demas:
+            claves_valores_demas[clave] = list(diferencia_demas.elements())
+        if diferencia_faltantes:
+            claves_valores_faltantes[clave] = list(diferencia_faltantes.elements())
+
+    return {
+        "Claves_Valor_DeMas": claves_valores_demas,
+        "Cantidad_Valor_DeMas": sum(len(v) for v in claves_valores_demas.values()),
+        "Claves_Valor_Faltantes": claves_valores_faltantes,
+        "Cantidad_Valor_Faltantes": sum(len(v) for v in claves_valores_faltantes.values())
+    }
+********************************
+resultado = comparar_diccionarios_con_valores_repetidos(dato_dic, base_dic)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 def parsear_lista(texto):
     if not isinstance(texto, str) or not texto.strip().startswith("["):
         return []
