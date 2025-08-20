@@ -1,4 +1,21 @@
 import pandas as pd
+def comparar_diccionarios(aceptadas: dict, obtenidas: dict):
+    coincidencias = 0
+    total = 0
+    
+    # Copia de obtenidas para ir quitando coincidencias
+    obtenidas_restantes = {k: v.copy() for k, v in obtenidas.items()}
+
+    for clave, valores_aceptados in aceptadas.items():
+        total += len(valores_aceptados)
+        if clave in obtenidas_restantes:
+            for valor in valores_aceptados:
+                if valor in obtenidas_restantes[clave]:
+                    coincidencias += 1
+                    # eliminar coincidencia de obtenidas
+                    obtenidas_restantes[clave].remove(valor)
+
+    return f"{coincidencias}/{total}", obtenidas_restantes
 
 def parse_dict(row_str):
     elements = row_str.split("],")
