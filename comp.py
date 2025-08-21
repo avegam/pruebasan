@@ -1,11 +1,11 @@
 import math
 
+import math
+
 def parse_dict(row_str):
-    # Manejar celdas vacías o None
+    # Manejar celdas vacías o NaN
     if row_str is None:
         return {}
-    
-    # Manejar NaN de pandas
     if isinstance(row_str, float) and math.isnan(row_str):
         return {}
 
@@ -13,15 +13,12 @@ def parse_dict(row_str):
     if not row_str:
         return {}
 
-    # Si llegamos hasta acá, podemos seguir con el parseo normal
     result = {}
+    # Separar elementos por "],"
     elements = [e + "]" if not e.endswith("]") else e for e in row_str.split("],")]
 
     for e in elements:
-        e = e.strip().strip(",")
-        if not e:
-            continue
-        e = e.strip("[]")
+        e = e.strip().strip(",").strip("[]")
         if not e:
             continue
         parts = e.split(",")
