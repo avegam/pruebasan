@@ -1,3 +1,39 @@
+import math
+
+def parse_dict(row_str):
+    # Manejar celdas vacías o None
+    if row_str is None:
+        return {}
+    
+    # Manejar NaN de pandas
+    if isinstance(row_str, float) and math.isnan(row_str):
+        return {}
+
+    row_str = str(row_str).strip()
+    if not row_str:
+        return {}
+
+    # Si llegamos hasta acá, podemos seguir con el parseo normal
+    result = {}
+    elements = [e + "]" if not e.endswith("]") else e for e in row_str.split("],")]
+
+    for e in elements:
+        e = e.strip().strip(",")
+        if not e:
+            continue
+        e = e.strip("[]")
+        if not e:
+            continue
+        parts = e.split(",")
+        key = parts[0].strip('"').strip("'")
+        values = [int(v.strip()) for v in parts[1:] if v.strip()]
+        result[key] = values
+
+    return result
+
+
+
+
 import json
 import requests
 import urllib3
