@@ -2,8 +2,10 @@ import math
 
 import math
 
+import math
+
 def parse_dict(row_str):
-    # Manejar celdas vacías o NaN
+    # Manejar celdas vacías, None o NaN
     if row_str is None:
         return {}
     if isinstance(row_str, float) and math.isnan(row_str):
@@ -14,7 +16,6 @@ def parse_dict(row_str):
         return {}
 
     result = {}
-    # Separar elementos por "],"
     elements = [e + "]" if not e.endswith("]") else e for e in row_str.split("],")]
 
     for e in elements:
@@ -23,7 +24,14 @@ def parse_dict(row_str):
             continue
         parts = e.split(",")
         key = parts[0].strip('"').strip("'")
-        values = [int(v.strip()) for v in parts[1:] if v.strip()]
+        values = []
+        for v in parts[1:]:
+            v = v.strip()
+            if v and v.lower() != "nan":  # ignorar celdas vacías o "nan"
+                try:
+                    values.append(int(v))
+                except ValueError:
+                    pass
         result[key] = values
 
     return result
